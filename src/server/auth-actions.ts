@@ -19,31 +19,31 @@ export async function registerAction(
   _prev: AuthFormState | undefined,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const parsed = registerSchema.safeParse({
-    name: formData.get("name") || undefined,
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
-
-  if (!parsed.success) {
-    const fieldErrors = parsed.error.flatten().fieldErrors;
-    return {
-      ok: false,
-      message: "입력값을 다시 확인해 주세요.",
-      fieldErrors,
-    };
-  }
-
-  const { name, email, password } = parsed.data;
-
-  const existing = await db.user.findUnique({ where: { email } });
-  if (existing) {
-    return { ok: false, message: "이미 사용 중인 이메일입니다." };
-  }
-
-  const passwordHash = await hash(password, 12);
-
   try {
+    const parsed = registerSchema.safeParse({
+      name: formData.get("name") || undefined,
+      email: formData.get("email"),
+      password: formData.get("password"),
+    });
+
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      return {
+        ok: false,
+        message: "입력값을 다시 확인해 주세요.",
+        fieldErrors,
+      };
+    }
+
+    const { name, email, password } = parsed.data;
+
+    const existing = await db.user.findUnique({ where: { email } });
+    if (existing) {
+      return { ok: false, message: "이미 사용 중인 이메일입니다." };
+    }
+
+    const passwordHash = await hash(password, 12);
+
     await db.user.create({
       data: {
         email,
@@ -51,10 +51,13 @@ export async function registerAction(
         password: passwordHash,
       },
     });
+
+    return { ok: true };
   } catch (e) {
     logger.error({ err: e }, "register_failed");
-    return { ok: false, message: "계정을 만들 수 없습니다. 잠시 후 다시 시도해 주세요." };
+    return {
+      ok: false,
+      message: "계정을 만들 수 없습니다. 잠시 후 다시 시도해 주세요.",
+    };
   }
-
-  return { ok: true };
 }

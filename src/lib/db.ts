@@ -13,16 +13,24 @@ function createClient() {
     throw new Error("DATABASE_URL is not set");
   }
 
-  const pool = globalForPrisma.pool ?? new pg.Pool({ connectionString });
-  if (process.env.NODE_ENV !== "production") {
+  // Vercel/Cloud DB require SSL usually
+  const isProduction = process.env.NODE_ENV === "production";
+  const pool =
+    globalForPrisma.pool ??
+    new pg.Pool({
+      connectionString,
+      ssl: isProduction ? { rejectUnauthorized: false } : false,
+    });
+
+  if (!isProduction) {
     globalForPrisma.pool = pool;
   }
 
   const adapter = new PrismaPg(pool);
-  const log =
-    process.env.NODE_ENV === "development" ? (["warn", "error"] as const) : (["error"] as const);
+  const log = isProduction ? (["error"] as const) : (["warn", "error"] as const);
 
-  return new PrismaClient({ adapter, log: [...log] });
+  const client = new PrismaClient({ adapter, log: [...log] });
+  return client;
 }
 
 export const db = globalForPrisma.prisma ?? createClient();
