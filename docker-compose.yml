@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: fairsplit
       POSTGRES_DB: fairsplit
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - fairsplit_pg:/var/lib/postgresql/data
 
