@@ -1,26 +1,48 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf8f5;
+  --foreground: #141312;
+  --muted: #5c5854;
+  --muted-bg: #f0ebe4;
+  --card: #ffffff;
+  --border: #e4ddd4;
+  --accent: #0f4d42;
+  --accent-foreground: #f4faf8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0c0b0a;
+    --foreground: #f2efe9;
+    --muted: #a39e96;
+    --muted-bg: #1a1816;
+    --card: #121110;
+    --border: #2a2622;
+    --accent: #3ecfba;
+    --accent-foreground: #041312;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-ui),
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

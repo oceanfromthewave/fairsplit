@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GroupRole {
+  OWNER
+  MEMBER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+
+  accounts Account[]
+  sessions Session[]
+
+  ownedGroups Group[] @relation("GroupOwner")
+
+  memberships     GroupMember[]
+  expensesPaid    Expense[]      @relation("ExpensePaidBy")
+  expensesCreated Expense[]      @relation("ExpenseCreatedBy")
+  expenseShares   ExpenseShare[]
+
+  memberPaymentsFrom     MemberPayment[] @relation("MemberPaymentFrom")
+  memberPaymentsTo       MemberPayment[] @relation("MemberPaymentTo")
+  memberPaymentsRecorded MemberPayment[] @relation("MemberPaymentRecordedBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Group {
+  id          String @id @default(cuid())
+  name        String
+  inviteToken String @unique
+  ownerId     String
+  owner       User   @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+
+  members          GroupMember[]
+  expenses         Expense[]
+  memberPayments   MemberPayment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model GroupMember {
+  id      String    @id @default(cuid())
+  groupId String
+  userId  String
+  role    GroupRole @default(MEMBER)
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  groupId     String
+  title       String
+  amountCents Int
+  currency    String   @default("KRW")
+  spentAt     DateTime @default(now())
+  paidById    String
+  createdById String
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  paidBy    User  @relation("ExpensePaidBy", fields: [paidById], references: [id], onDelete: Restrict)
+  createdBy User  @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  shares ExpenseShare[]
+
+  createdAt DateTime @default(now())
+
+  @@index([groupId])
+  @@index([spentAt])
+}
+
+model ExpenseShare {
+  id        String @id @default(cuid())
+  expenseId String
+  userId    String
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, userId])
+  @@index([userId])
+}
+
+model MemberPayment {
+  id             String   @id @default(cuid())
+  groupId        String
+  fromUserId     String
+  toUserId       String
+  amountWon      Int
+  recordedById   String
+  createdAt      DateTime @default(now())
+
+  group      Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  fromUser   User  @relation("MemberPaymentFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser     User  @relation("MemberPaymentTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  recordedBy User  @relation("MemberPaymentRecordedBy", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([groupId])
+  @@index([fromUserId])
+  @@index([toUserId])
+}
