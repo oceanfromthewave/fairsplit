@@ -55,9 +55,10 @@ export async function registerAction(
     return { ok: true };
   } catch (e) {
     logger.error({ err: e }, "register_failed");
+    const errorMessage = e instanceof Error ? e.message : String(e);
     return {
       ok: false,
-      message: "계정을 만들 수 없습니다. 잠시 후 다시 시도해 주세요.",
+      message: `계정을 만들 수 없습니다 (${errorMessage}). 잠시 후 다시 시도해 주세요.`,
     };
   }
 }
